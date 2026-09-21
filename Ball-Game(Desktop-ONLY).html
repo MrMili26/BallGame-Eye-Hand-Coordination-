@@ -1,0 +1,549 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Co-ordination Assessment — Replica</title>
+<style>
+  :root{
+    --page:#d0d0d0; --navy:#1b3a5c; --ink:#e8eef3; --dim:#8a9caa;
+    --panel:#161d24; --line:#28333d; --hot:#c8399b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--page);overflow:hidden;
+    font-family:"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  #stage{position:relative;width:100%;height:100%}
+  #cv{display:block;width:100%;height:100%}
+  #lic{position:absolute;left:10px;top:8px;font-size:11px;color:#6b6b6b}
+  #score{position:absolute;right:26px;top:16px;font-size:34px;font-weight:600;
+    color:var(--navy);font-variant-numeric:tabular-nums}
+  #mark{position:absolute;left:26px;bottom:22px;color:var(--navy);
+    font-size:26px;font-weight:300;letter-spacing:.42em}
+  #mark small{display:block;font-size:10px;letter-spacing:.1em;opacity:.7;margin-bottom:2px}
+
+  #windbar{position:absolute;right:24px;bottom:22px;display:flex;gap:8px;align-items:center}
+  .wbtn{font:inherit;font-size:12px;letter-spacing:.06em;background:rgba(27,58,92,.10);
+    color:var(--navy);border:1px solid rgba(27,58,92,.35);border-radius:4px;
+    padding:6px 12px;cursor:pointer}
+  .wbtn:hover{background:rgba(27,58,92,.18)}
+  .wbtn.off{opacity:.5}
+  #ov{position:fixed;inset:0;background:rgba(8,11,15,.86);display:flex;align-items:center;
+    justify-content:center;padding:18px;overflow-y:auto;z-index:20}
+  #ov.hide{display:none}
+  .card{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:6px;
+    padding:26px 30px;max-width:660px;width:100%}
+  .card h2{margin:0 0 8px;font-size:25px;font-weight:600}
+  .card h3{margin:18px 0 6px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .card p{margin:0 0 12px;font-size:15px;line-height:1.6;color:var(--dim)}
+  .card ul{margin:0 0 14px;padding-left:18px;color:var(--dim);font-size:15px;line-height:1.75}
+  .card b{color:var(--ink)}
+  button.go{font:inherit;font-size:16px;font-weight:600;background:var(--hot);color:#fff;border:none;
+    border-radius:4px;padding:11px 26px;cursor:pointer}
+  button.go:hover{background:#d94dab}
+  button.ghost{font:inherit;font-size:15px;background:#232e37;color:var(--ink);
+    border:1px solid var(--line);border-radius:4px;padding:10px 20px;cursor:pointer}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  td.n{text-align:right;font-variant-numeric:tabular-nums}
+  .sten{display:flex;margin:4px 0 0;border-radius:3px;overflow:hidden;font-size:11px}
+  .sten div{flex:1;text-align:center;padding:3px 0;color:#222}
+  .mk{position:relative;height:16px}
+  .mk span{position:absolute;transform:translateX(-50%);font-size:13px;color:var(--ink)}
+  .note{font-size:13px;color:var(--dim);line-height:1.6}
+  .card input[type=number]{font:inherit;font-size:15px;width:110px;background:#0e141a;color:var(--ink);
+    border:1px solid var(--line);border-radius:4px;padding:9px 10px}
+
+  #side{position:absolute;left:18px;top:18px;width:206px;background:rgba(22,29,36,.93);
+    border:1px solid var(--line);border-radius:6px;padding:12px 13px;color:var(--ink);z-index:10}
+  #side.hide{display:none}
+  #side h4{margin:0 0 9px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:500}
+  #side .ph{font-size:15px;font-weight:600;margin-bottom:2px}
+  #side .tm{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;margin-bottom:11px}
+  .sbtn{display:block;width:100%;font:inherit;font-size:12.5px;background:#232e37;color:var(--ink);
+    border:1px solid var(--line);border-radius:4px;padding:7px 9px;margin-bottom:6px;cursor:pointer;text-align:left}
+  .sbtn:hover{background:#2c3a45}
+  .sbtn.on{border-color:var(--hot);color:#fff}
+  #side .hint{font-size:11px;color:var(--dim);line-height:1.5;margin:8px 0 0}
+  #cue{position:absolute;left:50%;top:26px;transform:translateX(-50%);color:var(--hot);
+    font-size:15px;font-weight:600;letter-spacing:.12em;opacity:0;transition:opacity .25s;z-index:9}
+</style>
+
+<div id="stage">
+  <canvas id="cv"></canvas>
+  <div id="lic">(HE.23a) Licence Code : REPLICA-LOCAL</div>
+  <div id="score">00</div>
+  <div id="mark"><small>replica</small>ADAPT</div>
+  <div id="windbar">
+    <button id="wOn" class="wbtn">Wind: ON</button>
+    <button id="wStr" class="wbtn">Standard</button>
+  </div>
+</div>
+<div id="side" class="hide">
+  <h4>Session</h4>
+  <div class="ph" id="sPhase">—</div>
+  <div class="tm" id="sTime">0.0s</div>
+  <button class="sbtn" id="sSkip">Skip this stage &rarr;</button>
+  <button class="sbtn" id="sRun">Go straight to scored run</button>
+  <button class="sbtn" id="sRestart">Restart from the top</button>
+  <h4 style="margin-top:13px">Options</h4>
+  <button class="sbtn" id="sInv">Y axis: normal</button>
+  <button class="sbtn" id="sCue">30s cue: ON</button>
+  <p class="hint">S hides this panel. W toggles wind.</p>
+</div>
+<div id="cue">30 SECONDS &mdash; REASSESS</div>
+<div id="ov"><div class="card" id="card"></div></div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id);};
+var clamp=function(v,a,b){return v<a?a:v>b?b:v;};
+
+/* ================= configuration ================= */
+var SCORED_LEN=180;                      // scored run length, seconds (set at launch)
+var DEFAULT_LEN=180;                     // 3 minutes if nothing is entered
+var PRACTICE={y:25,x:25,both:30};
+var MAX_SCORE=500;                       // matches the report graph axis
+var RATE=MAX_SCORE/SCORED_LEN;           // points per second when perfectly centred
+function setDuration(sec){
+  sec=Math.round(sec);
+  if(!isFinite(sec)||sec<15) sec=DEFAULT_LEN;
+  SCORED_LEN=clamp(sec,15,1800);
+  RATE=MAX_SCORE/SCORED_LEN;             // score always scales to 500 over the chosen length
+}
+var STEN_EDGE=[0,20,45,70,110,160,220,300,390,470];  // 73 lands on sten 4, as in the report
+
+/* ================= state ================= */
+var S={
+  phase:"idle", t:0, axis:"both",
+  bx:0, by:0, bvx:0, bvy:0,
+  tiltX:0, tiltY:0,
+  windA:Math.random()*6.283, windM:0.3, windTarget:0.3,
+  windRot:(Math.random()<0.5?-1:1)*(0.35+Math.random()*0.4), windSwirl:Math.random()*6.283,
+  score:0, samples:[], trace:[],
+  invertY:false, mx:0, my:0, padName:"",
+  windOn:true, windLevel:1,
+  withPractice:true, cueOn:true, lastCue:0, cueFlash:0
+};
+
+/* ================= input ================= */
+var keys={};
+addEventListener("keydown",function(e){keys[e.key]=1; if(e.key.indexOf("Arrow")===0)e.preventDefault();});
+addEventListener("keyup",function(e){keys[e.key]=0;});
+addEventListener("mousemove",function(e){
+  var r=$("cv").getBoundingClientRect();
+  var cx=r.left+r.width/2, cy=r.top+r.height/2;
+  var Rr=Math.min(r.width,r.height)*0.42;
+  S.mx=clamp((e.clientX-cx)/Rr,-1,1);
+  S.my=clamp((e.clientY-cy)/Rr,-1,1);
+});
+function readStick(){
+  var ax=0, ay=0, pad=null;
+  var pads=navigator.getGamepads?navigator.getGamepads():[];
+  for(var i=0;i<pads.length;i++){ if(pads[i]&&pads[i].connected){pad=pads[i];break;} }
+  if(pad){
+    S.padName=pad.id;
+    var dz=0.08;
+    var n=function(v){return Math.abs(v)<dz?0:(v<0?-1:1)*(Math.abs(v)-dz)/(1-dz);};
+    ax=n(pad.axes[0]||0); ay=n(pad.axes[1]||0);
+  }else{
+    S.padName="";
+    if(keys.ArrowLeft||keys.ArrowRight||keys.ArrowUp||keys.ArrowDown){
+      ax=(keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0);
+      ay=(keys.ArrowDown?1:0)-(keys.ArrowUp?1:0);
+    }else{ ax=S.mx; ay=S.my; }
+  }
+  if(S.invertY) ay=-ay;
+  if(S.axis==="y") ax=0;
+  if(S.axis==="x") ay=0;
+  S.tiltX=ax; S.tiltY=ay;
+}
+
+/* ================= physics ================= */
+var ROLL=5/7, TILT_G=1.35, DAMP=0.30, RIM=0.94, BOUNCE=0.42;
+var WIND_LEVEL=[{n:"Light",k:0.55},{n:"Standard",k:1.0},{n:"Strong",k:1.6}];
+function step(dt){
+  /* direction is never steady: a drifting rotation rate + a slow swirl + occasional reversals */
+  S.windRot+=(Math.random()-0.5)*1.4*dt;
+  if(S.windRot>0.95) S.windRot=0.95; if(S.windRot<-0.95) S.windRot=-0.95;
+  if(Math.abs(S.windRot)<0.18) S.windRot=(S.windRot<0?-1:1)*0.18;   /* never parks */
+  if(Math.random()<dt*0.16) S.windRot=-S.windRot*(0.7+Math.random()*0.8); /* veer / back */
+  S.windSwirl+=dt*0.55;
+  S.windA+=(S.windRot+0.30*Math.sin(S.windSwirl))*dt+(Math.random()-0.5)*0.5*dt;
+  if(Math.random()<dt*0.35) S.windTarget=0.18+Math.random()*0.5;
+  S.windM+=(S.windTarget-S.windM)*dt*0.7;
+  var k=S.windOn?WIND_LEVEL[S.windLevel].k:0;
+  var wx=Math.cos(S.windA)*S.windM*k, wy=Math.sin(S.windA)*S.windM*k;
+  if(S.axis==="y") wx=0;
+  if(S.axis==="x") wy=0;
+
+  var ax=ROLL*(TILT_G*S.tiltX+wx)-S.bvx*DAMP;
+  var ay=ROLL*(TILT_G*S.tiltY+wy)-S.bvy*DAMP;
+  S.bvx+=ax*dt; S.bvy+=ay*dt;
+  S.bx+=S.bvx*dt; S.by+=S.bvy*dt;
+
+  var d=Math.sqrt(S.bx*S.bx+S.by*S.by);
+  if(d>RIM){
+    var nx=S.bx/d, ny=S.by/d;
+    S.bx=nx*RIM; S.by=ny*RIM;
+    var vn=S.bvx*nx+S.bvy*ny;
+    S.bvx-=(1+BOUNCE)*vn*nx; S.bvy-=(1+BOUNCE)*vn*ny;
+  }
+
+  if(S.phase==="run"){
+    var dist=Math.sqrt(S.bx*S.bx+S.by*S.by);
+    var q=clamp(1-dist/0.45,0,1);
+    var rate=q*q*RATE;
+    S.score+=rate*dt;
+    S.samples.push(rate);
+    if(!S.trace.length || S.t-S.trace[S.trace.length-1][0]>=1) S.trace.push([S.t,S.score]);
+  }
+}
+
+/* ================= rendering ================= */
+var cv=$("cv"), g=cv.getContext("2d");
+var W=0,H=0,R=0,CX=0,CY=0;
+function resize(){
+  var d=Math.min(devicePixelRatio||1,2);
+  W=innerWidth; H=innerHeight;
+  cv.width=W*d; cv.height=H*d; g.setTransform(d,0,0,d,0,0);
+  R=Math.min(W,H)*0.42; CX=W/2; CY=H*0.52;
+}
+addEventListener("resize",resize);
+
+function drawTray(){
+  g.clearRect(0,0,W,H);
+  g.fillStyle="#d0d0d0"; g.fillRect(0,0,W,H);
+
+  g.fillStyle="#5f7d94";
+  g.beginPath(); g.arc(CX,CY,R,0,7); g.fill();
+  var rg=g.createLinearGradient(CX-R,CY-R,CX+R,CY+R);
+  rg.addColorStop(0,"rgba(255,255,255,.30)");
+  rg.addColorStop(.5,"rgba(255,255,255,0)");
+  rg.addColorStop(1,"rgba(0,0,0,.28)");
+  g.fillStyle=rg; g.beginPath(); g.arc(CX,CY,R,0,7); g.fill();
+
+  g.fillStyle="#172834";
+  g.beginPath(); g.arc(CX,CY,R*0.905,0,7); g.fill();
+
+  var dr=R*0.79;
+  var dg=g.createRadialGradient(CX-dr*0.18,CY-dr*0.28,dr*0.08,CX,CY,dr);
+  dg.addColorStop(0,"#7fa6c0"); dg.addColorStop(.55,"#739bb3"); dg.addColorStop(1,"#5b7992");
+  g.fillStyle=dg; g.beginPath(); g.arc(CX,CY,dr,0,7); g.fill();
+  var sh=g.createRadialGradient(CX,CY,dr*0.62,CX,CY,dr);
+  sh.addColorStop(0,"rgba(0,0,0,0)"); sh.addColorStop(1,"rgba(0,0,0,.34)");
+  g.fillStyle=sh; g.beginPath(); g.arc(CX,CY,dr,0,7); g.fill();
+
+  if(S.phase!=="idle"&&S.phase!=="done"){
+    var hx=CX-S.tiltX*dr*0.5, hy=CY-S.tiltY*dr*0.5;
+    var hg=g.createRadialGradient(hx,hy,0,hx,hy,dr*0.85);
+    hg.addColorStop(0,"rgba(255,255,255,.10)");
+    hg.addColorStop(1,"rgba(255,255,255,0)");
+    g.fillStyle=hg; g.beginPath(); g.arc(CX,CY,dr,0,7); g.fill();
+  }
+
+  /* white X at the exact centre */
+  var xr=dr*0.115;
+  g.strokeStyle="#ffffff"; g.lineWidth=Math.max(6,dr*0.058);
+  g.beginPath();
+  g.moveTo(CX-xr,CY-xr); g.lineTo(CX+xr,CY+xr);
+  g.moveTo(CX+xr,CY-xr); g.lineTo(CX-xr,CY+xr);
+  g.stroke();
+
+  /* pinkish-purple 3D sphere */
+  var br=dr*0.115;
+  var px=CX+S.bx*dr, py=CY+S.by*dr;
+  g.fillStyle="rgba(0,0,0,.30)";
+  g.beginPath(); g.ellipse(px+br*0.22,py+br*0.42,br*0.95,br*0.55,0,0,7); g.fill();
+  var bg=g.createRadialGradient(px-br*0.35,py-br*0.42,br*0.06,px,py,br*1.05);
+  bg.addColorStop(0,"#eda2d8"); bg.addColorStop(.30,"#c74fa5");
+  bg.addColorStop(.70,"#9d1f80"); bg.addColorStop(1,"#5f0e4d");
+  g.fillStyle=bg; g.beginPath(); g.arc(px,py,br,0,7); g.fill();
+  g.fillStyle="rgba(255,255,255,.55)";
+  g.beginPath(); g.ellipse(px-br*0.34,py-br*0.40,br*0.20,br*0.13,-0.7,0,7); g.fill();
+}
+
+function windBearing(){
+  var b=Math.atan2(Math.cos(S.windA),-Math.sin(S.windA))*180/Math.PI;
+  return (b+360)%360;
+}
+function drawCompass(){
+  var cr=Math.max(38,Math.min(W,H)*0.062);
+  var cx=W-cr-46, cy=H-cr-72;
+  g.save();
+  g.fillStyle="rgba(255,255,255,.55)";
+  g.beginPath(); g.arc(cx,cy,cr,0,7); g.fill();
+  g.strokeStyle="rgba(27,58,92,.45)"; g.lineWidth=1.6;
+  g.beginPath(); g.arc(cx,cy,cr,0,7); g.stroke();
+
+  /* cardinal marks */
+  g.fillStyle="#1b3a5c"; g.font="600 "+(cr*0.30)+"px 'Segoe UI',sans-serif";
+  g.textAlign="center"; g.textBaseline="middle";
+  var card=[["N",0],["E",90],["S",180],["W",270]];
+  for(var i=0;i<4;i++){
+    var a=card[i][1]*Math.PI/180;
+    g.fillText(card[i][0], cx+Math.sin(a)*cr*0.76, cy-Math.cos(a)*cr*0.76);
+  }
+  g.strokeStyle="rgba(27,58,92,.30)"; g.lineWidth=1;
+  for(var t=0;t<360;t+=30){
+    var ta=t*Math.PI/180;
+    g.beginPath();
+    g.moveTo(cx+Math.sin(ta)*cr*0.52, cy-Math.cos(ta)*cr*0.52);
+    g.lineTo(cx+Math.sin(ta)*cr*0.60, cy-Math.cos(ta)*cr*0.60);
+    g.stroke();
+  }
+
+  if(S.windOn){
+    /* arrow points the way the wind is pushing the ball */
+    var mag=Math.min(1,S.windM*WIND_LEVEL[S.windLevel].k/0.9);
+    var len=cr*(0.24+0.34*mag);
+    var ux=Math.cos(S.windA), uy=Math.sin(S.windA);
+    g.strokeStyle="#a8288a"; g.lineWidth=Math.max(2.5,cr*0.075); g.lineCap="round";
+    g.beginPath();
+    g.moveTo(cx-ux*len*0.75, cy-uy*len*0.75);
+    g.lineTo(cx+ux*len, cy+uy*len);
+    g.stroke();
+    g.fillStyle="#a8288a";
+    var hx=cx+ux*len, hy=cy+uy*len, hw=cr*0.16;
+    g.beginPath();
+    g.moveTo(hx+ux*hw, hy+uy*hw);
+    g.lineTo(hx-uy*hw*0.72-ux*hw*0.3, hy+ux*hw*0.72-uy*hw*0.3);
+    g.lineTo(hx+uy*hw*0.72-ux*hw*0.3, hy-ux*hw*0.72-uy*hw*0.3);
+    g.closePath(); g.fill();
+    g.fillStyle="#1b3a5c"; g.font=(cr*0.26)+"px ui-monospace,monospace";
+    g.fillText(("00"+Math.round(windBearing())).slice(-3)+"\u00B0", cx, cy+cr*1.34);
+  }else{
+    g.fillStyle="rgba(27,58,92,.5)"; g.font=(cr*0.26)+"px 'Segoe UI',sans-serif";
+    g.fillText("NO WIND", cx, cy+cr*1.34);
+  }
+  g.fillStyle="rgba(27,58,92,.65)"; g.font=(cr*0.24)+"px 'Segoe UI',sans-serif";
+  g.fillText("WIND", cx, cy-cr*1.30);
+  g.textAlign="start"; g.textBaseline="alphabetic";
+  g.restore();
+}
+
+function wrap(text,max){
+  var words=text.split(" "), out=[], line="";
+  for(var i=0;i<words.length;i++){
+    if((line+" "+words[i]).replace(/^\s+/,"").length>max){ out.push(line.replace(/^\s+/,"")); line=words[i]; }
+    else line+=" "+words[i];
+  }
+  if(line.replace(/^\s+/,"")) out.push(line.replace(/^\s+/,""));
+  return out;
+}
+function drawMessage(lines){
+  var w=Math.min(W*0.44,R*1.4), lh=30, h=lines.length*lh+34;
+  g.fillStyle="rgba(30,42,54,.72)";
+  g.fillRect(CX-w/2,CY-h/2,w,h);
+  g.fillStyle="#fff"; g.font="500 21px 'Segoe UI',sans-serif";
+  g.textAlign="center"; g.textBaseline="middle";
+  for(var i=0;i<lines.length;i++) g.fillText(lines[i],CX,CY-h/2+22+i*lh);
+  g.textAlign="start"; g.textBaseline="alphabetic";
+}
+
+/* ================= phases ================= */
+var MSG={
+  pracY:"Practice using the controller stick to keep the ball centred. The ball will move vertically only.",
+  pracX:"Now the ball will move horizontally only. Keep it centred using the stick.",
+  pracB:"The ball will now move both vertically and horizontally. Keep it in the centre.",
+  preRun:""
+};
+function preRunText(){
+  var m=Math.floor(SCORED_LEN/60), r=SCORED_LEN%60;
+  var t = m&&r ? m+" minutes "+r+" seconds" : m ? (m===1?"1 minute":m+" minutes") : SCORED_LEN+" seconds";
+  return "Scoring for the next "+t+".";
+}
+function resetBall(){ S.bx=0;S.by=0;S.bvx=0;S.bvy=0;S.windM=0.3;S.windTarget=0.3;
+  S.windA=Math.random()*6.283; S.windRot=(Math.random()<0.5?-1:1)*(0.35+Math.random()*0.4); S.windSwirl=Math.random()*6.283; }
+function setPhase(p){
+  S.phase=p; S.t=0; S.lastCue=0;
+  syncSide();
+  if(p==="pracY"){S.axis="y";resetBall();}
+  if(p==="pracX"){S.axis="x";resetBall();}
+  if(p==="pracB"){S.axis="both";resetBall();}
+  if(p==="preRun"){S.axis="both";resetBall();}
+  if(p==="run"){S.axis="both";resetBall();S.score=0;S.samples=[];S.trace=[[0,0]];}
+}
+
+var last=performance.now();
+function frame(now){
+  var dt=Math.min((now-last)/1000,0.05); last=now;
+  readStick();
+  if(S.phase!=="idle"&&S.phase!=="done"){ S.t+=dt; step(dt); }
+  drawTray();
+  drawCompass();
+  if(S.phase==="pracY"&&S.t<4.5) drawMessage(wrap(MSG.pracY,34));
+  if(S.phase==="pracX"&&S.t<4.5) drawMessage(wrap(MSG.pracX,34));
+  if(S.phase==="pracB"&&S.t<4.5) drawMessage(wrap(MSG.pracB,34));
+  if(S.phase==="preRun") drawMessage(wrap(preRunText(),34));
+
+  $("score").textContent = (S.phase==="run")
+    ? (Math.floor(S.score)<10?"0":"")+Math.floor(S.score) : "00";
+
+  /* 30-second rule cue: fires in every live stage */
+  if(S.cueOn && S.phase!=="idle" && S.phase!=="done" && S.phase!=="preRun" && S.t-S.lastCue>=30){
+    S.lastCue=S.t; S.cueFlash=2.2;
+  }
+  if(S.cueFlash>0){ S.cueFlash-=dt; $("cue").style.opacity=S.cueFlash>0?"1":"0"; }
+  if(S.phase!=="idle"&&S.phase!=="done"){
+    $("sTime").textContent=S.t.toFixed(1)+"s"+(S.phase==="run"?" / "+SCORED_LEN+"s":"");
+  }
+
+  if(S.phase==="pracY"&&S.t>PRACTICE.y) setPhase("pracX");
+  else if(S.phase==="pracX"&&S.t>PRACTICE.x) setPhase("pracB");
+  else if(S.phase==="pracB"&&S.t>PRACTICE.both) setPhase("preRun");
+  else if(S.phase==="preRun"&&S.t>4) setPhase("run");
+  else if(S.phase==="run"&&S.t>=SCORED_LEN) finish();
+
+  requestAnimationFrame(frame);
+}
+
+/* ================= report ================= */
+function stenOf(v){ var s=1; for(var i=0;i<STEN_EDGE.length;i++) if(v>=STEN_EDGE[i]) s=i+1; return clamp(s,1,10); }
+function band(s){
+  return s>=9?["High","#3fbf63"]:s>=7?["Above Average","#4b9fe0"]:
+         s>=5?["Average","#e8d24a"]:s>=3?["Below Average","#e0952f"]:["Low","#e05a5a"];
+}
+function stenBar(mark){
+  var cols=["#e02b2b","#e2551f","#e0952f","#e8bb2f","#e8d24a","#cfd83f","#a9d13c","#79c545","#57bd4a","#3fbf63"];
+  var h='<div class="sten">';
+  for(var i=1;i<=10;i++) h+='<div style="background:'+cols[i-1]+'">'+i+'</div>';
+  h+='</div><div class="mk"><span style="left:'+((mark-0.5)*10)+'%">▲</span></div>';
+  return h;
+}
+function traceSVG(){
+  var w=600,h=200,pad=36,pts="",grid="",v,t,x,y;
+  for(v=0;v<=500;v+=100){
+    y=h-22-(v/MAX_SCORE)*(h-40);
+    grid+='<line x1="'+pad+'" y1="'+y+'" x2="'+(w-10)+'" y2="'+y+'" stroke="#2b3640"/>'+
+          '<text x="4" y="'+(y+4)+'" fill="#8a9caa" font-size="10">'+v+'</text>';
+  }
+  var stepT=Math.max(5,Math.round(SCORED_LEN/9/5)*5);
+  for(t=stepT;t<=SCORED_LEN;t+=stepT){
+    x=pad+(t/SCORED_LEN)*(w-pad-10);
+    grid+='<text x="'+(x-7)+'" y="'+(h-6)+'" fill="#8a9caa" font-size="10">'+t+'</text>';
+  }
+  for(var i=0;i<S.trace.length;i++){
+    x=pad+(S.trace[i][0]/SCORED_LEN)*(w-pad-10);
+    y=h-22-(S.trace[i][1]/MAX_SCORE)*(h-40);
+    pts+=x.toFixed(1)+","+y.toFixed(1)+" ";
+  }
+  return '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:auto;background:#0e141a;'+
+    'border:1px solid #28333d;border-radius:4px">'+grid+
+    '<polyline points="'+pts+'" fill="none" stroke="#c8399b" stroke-width="2"/></svg>';
+}
+function avg(a){ if(!a.length) return 0; var s=0; for(var i=0;i<a.length;i++) s+=a[i]; return s/a.length; }
+function finish(){
+  S.phase="done";
+  $("side").classList.add("hide");
+  $("cue").style.opacity="0";
+  var n=S.samples.length;
+  var f=avg(S.samples.slice(0,Math.floor(n/3)));
+  var l=avg(S.samples.slice(Math.floor(n*2/3)));
+  var overall=stenOf(S.score);
+  var learn=5+Math.round((l-f)/(RATE*0.22));
+  if(f>RATE*0.75) learn=Math.min(learn,6);       // a strong start leaves less room to show learning
+  learn=clamp(learn,1,10);
+  var b=band(overall);
+  var onTarget=Math.round(S.samples.filter(function(v){return v>RATE*0.25;}).length/Math.max(1,n)*100);
+
+  card('<h2>Co-ordination Assessment</h2>'+
+   '<h3>Physical summary</h3>'+traceSVG()+
+   '<table><tr><th>Measure</th><th style="text-align:right">Value</th></tr>'+
+   '<tr><td>Final score</td><td class="n">'+Math.floor(S.score)+'</td></tr>'+
+   '<tr><td>Time inside the centre zone</td><td class="n">'+onTarget+'%</td></tr>'+
+   '<tr><td>Scoring rate, first third → final third</td><td class="n">'+f.toFixed(2)+' → '+l.toFixed(2)+'</td></tr></table>'+
+   '<h3>Overall — sten '+overall+'</h3>'+stenBar(overall)+
+   '<p style="margin-top:8px"><span style="display:inline-block;width:11px;height:11px;border-radius:50%;'+
+     'background:'+b[1]+';margin-right:7px"></span><b>'+b[0]+'</b></p>'+
+   '<h3>Learning — sten '+learn+'</h3>'+stenBar(learn)+
+   '<p class="note">'+(learn>5?'Performance improved across the run — you changed something and it worked.':
+     learn<5?'Performance degraded across the run.':
+     'No learning shown: the final minute matched the first. Adapting mid-run is what this scale measures.')+'</p>'+
+   '<div class="row"><button class="go" id="again">Run again</button></div>');
+  $("again").onclick=function(){ intro(); };
+}
+
+/* ================= cards ================= */
+function card(h){ $("card").innerHTML=h; $("ov").classList.remove("hide"); }
+function hide(){ $("ov").classList.add("hide"); }
+function intro(){
+  card('<h2>Co-ordination Assessment</h2>'+
+   '<p>A ball, resting on a tray, will move due to a wind that is continuously changing direction. '+
+   'The controller stick tilts the tray, also causing the ball to move.</p>'+
+   '<p><b>Keep the ball in the centre of the tray</b> \u2014 on the white X.</p>'+
+   '<h3>Scored run length</h3>'+
+   '<div class="row"><input type="number" id="len" min="15" max="1800" step="5" placeholder="180">'+
+   '<span class="note">seconds \u2014 leave blank for the default 3 minutes (180s)</span></div>'+
+   '<h3>Start with</h3>'+
+   '<div class="row"><button class="go" id="goFull">Practice, then scored run</button>'+
+   '<button class="ghost" id="goRun">Scored run only</button></div>'+
+   '<p class="note" style="margin-top:10px"><b>Practice, then scored run</b> is the full test drive: '+
+   'vertical axis '+PRACTICE.y+'s, horizontal axis '+PRACTICE.x+'s, both axes '+PRACTICE.both+'s, then the '+
+   'scored assessment. A settings panel appears on the left during the run so you can skip a stage, '+
+   'jump straight to scoring, or restart.</p>'+
+   '<h3>Controls</h3>'+
+   '<p>A connected joystick is used if present. Otherwise move the mouse: its offset from the '+
+   'centre of the screen is the stick deflection. Arrow keys also work.</p>'+
+   '<div class="row"><button class="ghost" id="inv">Invert Y axis</button></div>'+
+   '<p class="note" style="margin-top:8px" id="invs">Y axis: normal</p>'+
+   '<p class="note">Wind can be switched off, or set to Light / Standard / Strong, using the '+
+   'controls at the bottom right (or the <b>W</b> key). The compass beside them shows which way '+
+   'the wind is pushing the ball \u2014 watch it swing round, veer and back, and never settle. Turn it '+
+   'off to isolate stick control, then bring it back \u2014 the real assessment always has wind.</p>');
+
+  $("inv").onclick=function(){ S.invertY=!S.invertY;
+    $("invs").textContent="Y axis: "+(S.invertY?"inverted":"normal"); syncSide(); };
+
+  function launch(withPractice){
+    setDuration(parseFloat($("len").value));
+    S.withPractice=withPractice;
+    hide();
+    $("side").classList.toggle("hide",!withPractice);
+    setPhase(withPractice?"pracY":"preRun");
+  }
+  $("goFull").onclick=function(){ launch(true); };
+  $("goRun").onclick=function(){ launch(false); };
+}
+
+/* ================= side settings panel ================= */
+var PHASE_NAME={pracY:"Practice \u2014 vertical",pracX:"Practice \u2014 horizontal",
+  pracB:"Practice \u2014 both axes",preRun:"Get ready",run:"Scored run",idle:"\u2014",done:"Finished"};
+function syncSide(){
+  $("sPhase").textContent=PHASE_NAME[S.phase]||"\u2014";
+  $("sInv").textContent="Y axis: "+(S.invertY?"inverted":"normal");
+  $("sInv").classList.toggle("on",S.invertY);
+  $("sCue").textContent="30s cue: "+(S.cueOn?"ON":"OFF");
+  $("sCue").classList.toggle("on",S.cueOn);
+  var live=(S.phase!=="idle"&&S.phase!=="done");
+  $("sSkip").disabled=!live||S.phase==="run";
+  $("sSkip").style.opacity=($("sSkip").disabled?.45:1);
+  $("sRun").disabled=!live||S.phase==="run";
+  $("sRun").style.opacity=($("sRun").disabled?.45:1);
+}
+$("sSkip").onclick=function(){
+  var next={pracY:"pracX",pracX:"pracB",pracB:"preRun",preRun:"run"}[S.phase];
+  if(next) setPhase(next);
+};
+$("sRun").onclick=function(){ setPhase("run"); };
+$("sRestart").onclick=function(){ S.phase="idle"; $("side").classList.add("hide");
+  $("cue").style.opacity="0"; intro(); };
+$("sInv").onclick=function(){ S.invertY=!S.invertY; syncSide(); };
+$("sCue").onclick=function(){ S.cueOn=!S.cueOn; if(!S.cueOn) $("cue").style.opacity="0"; syncSide(); };
+addEventListener("keydown",function(e){
+  if((e.key==="s"||e.key==="S")&&S.phase!=="idle"&&S.phase!=="done") $("side").classList.toggle("hide");
+});
+
+function syncWind(){
+  $("wOn").textContent="Wind: "+(S.windOn?"ON":"OFF");
+  $("wOn").classList.toggle("off",!S.windOn);
+  $("wStr").textContent=WIND_LEVEL[S.windLevel].n;
+  $("wStr").classList.toggle("off",!S.windOn);
+}
+$("wOn").onclick=function(){ S.windOn=!S.windOn; syncWind(); };
+$("wStr").onclick=function(){ S.windLevel=(S.windLevel+1)%WIND_LEVEL.length; S.windOn=true; syncWind(); };
+addEventListener("keydown",function(e){ if(e.key==="w"||e.key==="W"){ S.windOn=!S.windOn; syncWind(); } });
+syncWind();
+resize(); intro();
+requestAnimationFrame(frame);
+})();
+</script>
